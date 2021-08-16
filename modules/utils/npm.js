@@ -1,5 +1,6 @@
 import url from 'url';
-import https from 'https';
+import node_http from 'http';
+import node_https from 'https';
 import gunzip from 'gunzip-maybe';
 import LRUCache from 'lru-cache';
 
@@ -9,8 +10,11 @@ const npmRegistryURL =
   process.env.NPM_REGISTRY_URL || 'https://registry.npmjs.org';
 
 const agent = new https.Agent({
-  keepAlive: true
+  keepAlive: true,
 });
+
+const https = process.env.STRICT_HTTP ? node_http : node_https;
+const default_port = process.env.STRICT_HTTP ? 80 : 443;
 
 const oneMegabyte = 1024 * 1024;
 const oneSecond = 1000;
@@ -19,7 +23,7 @@ const oneMinute = oneSecond * 60;
 const cache = new LRUCache({
   max: oneMegabyte * 40,
   length: Buffer.byteLength,
-  maxAge: oneSecond
+  maxAge: oneSecond,
 });
 
 const notFound = '';
@@ -51,10 +55,10 @@ async function fetchPackageInfo(packageName, log) {
     agent: agent,
     hostname: hostname,
     path: pathname,
-    port: port || 443,
+    port: port || default_port,
     headers: {
-      Accept: 'application/json'
-    }
+      Accept: 'application/json',
+    },
   };
 
   const res = await get(options);
@@ -120,7 +124,7 @@ const packageConfigExcludeKeys = [
   'homepage',
   'keywords',
   'maintainers',
-  'scripts'
+  'scripts',
 ];
 
 function cleanPackageConfig(config) {
@@ -179,7 +183,7 @@ export async function getPackage(packageName, version, log) {
     agent: agent,
     hostname: hostname,
     path: pathname,
-    port: port || 443
+    port: port || default_port,
   };
 
   const res = await get(options);

@@ -7,7 +7,8 @@ npm-debug.log*
 /public/_client/
 /secrets.tar
 /secret_key
-/server.js
 /service-account-staging.json
 /service-account.json
 /tokens/
+node_modules
+modules/*

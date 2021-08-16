@@ -9,12 +9,12 @@ import bufferStream from './bufferStream.js';
 const npmRegistryURL =
   process.env.NPM_REGISTRY_URL || 'https://registry.npmjs.org';
 
+const https = process.env.STRICT_HTTP ? node_http : node_https;
+const default_port = process.env.STRICT_HTTP ? 80 : 443;
+
 const agent = new https.Agent({
   keepAlive: true,
 });
-
-const https = process.env.STRICT_HTTP ? node_http : node_https;
-const default_port = process.env.STRICT_HTTP ? 80 : 443;
 
 const oneMegabyte = 1024 * 1024;
 const oneSecond = 1000;

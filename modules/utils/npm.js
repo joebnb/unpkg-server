@@ -5,9 +5,12 @@ import gunzip from 'gunzip-maybe';
 import LRUCache from 'lru-cache';
 
 import bufferStream from './bufferStream.js';
+import { getCache, setCache } from './npmCache';
 
 const npmRegistryURL =
   process.env.NPM_REGISTRY_URL || 'https://registry.npmjs.org';
+
+const enableCache = process.env.CACHE ?? undefined;
 
 const https = process.env.STRICT_HTTP ? node_http : node_https;
 const default_port = process.env.STRICT_HTTP ? 80 : 443;
@@ -105,11 +108,11 @@ export async function getVersionsAndTags(packageName, log) {
   const value = await fetchVersionsAndTags(packageName, log);
 
   if (value == null) {
-    cache.set(cacheKey, notFound, 5 * oneMinute);
+    cache.set(cacheKey, notFound, 10 * oneMinute);
     return null;
   }
 
-  cache.set(cacheKey, JSON.stringify(value), oneMinute);
+  cache.set(cacheKey, JSON.stringify(value), 10 * oneMinute);
   return value;
 }
 
@@ -159,11 +162,11 @@ export async function getPackageConfig(packageName, version, log) {
   const value = await fetchPackageConfig(packageName, version, log);
 
   if (value == null) {
-    cache.set(cacheKey, notFound, 5 * oneMinute);
+    cache.set(cacheKey, notFound, 10 * oneMinute);
     return null;
   }
 
-  cache.set(cacheKey, JSON.stringify(value), oneMinute);
+  cache.set(cacheKey, JSON.stringify(value), 10 * oneMinute);
   return value;
 }
 
@@ -186,11 +189,22 @@ export async function getPackage(packageName, version, log) {
     port: port || default_port,
   };
 
+  const cacheName = `${packageName}/${tarballName}-${version}.cache`;
+  if (getCache(cacheName) && enableCache) {
+    console.log('cache hit', cacheName);
+    return getCache(cacheName);
+  }
+
   const res = await get(options);
 
   if (res.statusCode === 200) {
     const stream = res.pipe(gunzip());
-    // stream.pause();
+
+    if (enableCache) {
+      console.log('create new cache', cacheName);
+      setCache(cacheName, stream);
+    }
+
     return stream;
   }
 

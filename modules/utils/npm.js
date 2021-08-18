@@ -179,6 +179,7 @@ export async function getPackage(packageName, version, log) {
     : packageName;
   const tarballURL = `${npmRegistryURL}/${packageName}/-/${tarballName}-${version}.tgz`;
 
+  console.log('serve_package', packageName, version);
   log.debug('Fetching package for %s from %s', packageName, tarballURL);
 
   const { hostname, pathname, port } = url.parse(tarballURL);
@@ -191,7 +192,7 @@ export async function getPackage(packageName, version, log) {
 
   const cacheName = `${packageName}/${tarballName}-${version}.cache`;
   if (getCache(cacheName) && enableCache) {
-    console.log('cache hit', cacheName);
+    console.log('cache_hit', cacheName);
     return getCache(cacheName);
   }
 
@@ -201,7 +202,7 @@ export async function getPackage(packageName, version, log) {
     const stream = res.pipe(gunzip());
 
     if (enableCache) {
-      console.log('create new cache', cacheName);
+      console.log('create_new_cache', cacheName);
       setCache(cacheName, stream);
     }
 
